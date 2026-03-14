@@ -1,10 +1,10 @@
-# 🤖 AutoDAG: Autonomous Agentic Orchestrator
+# AgentForge: Autonomous Agentic Orchestrator
 
 An autonomous AI agent designed to decompose complex human prompts into executable **Directed Acyclic Graphs (DAGs)**. It features a self-evolving planning loop, dynamic tool-calling via OpenAPI specifications, and a "Reflexion" based contextual memory system.
 
 ---
 
-## 🔥 Problem Statement
+## Problem Statement
 The current generation of AI agents suffers from a significant bottleneck: **excessive human intervention.** While modern LLMs are powerful, current agentic tools frequently stall, hallucinate, or lose track of the objective, requiring a human user to constantly "nudge," correct, or restart the process.
 
 **AutoDAG** is built to bridge this gap. Our goal is to drastically decrease human oversight by implementing a self-correcting architecture that:
@@ -14,7 +14,7 @@ The current generation of AI agents suffers from a significant bottleneck: **exc
 
 ---
 
-## 🏗 The Workflow
+##  The Workflow
 
 ### Phase 1: Task Decomposition & The "Judge" Loop
 We break the problem into four pillars: task decomposition, tool selection, memory management, and workflow execution.
@@ -39,7 +39,7 @@ The agent uses a **Custom JSON Structure** as an internal workspace to maintain 
 
 ---
 
-## 🛠 Tech Stack
+## Tech Stack
 
 | Layer | Technology |
 | :--- | :--- |
@@ -53,13 +53,7 @@ The agent uses a **Custom JSON Structure** as an internal workspace to maintain 
 
 ---
 
-## 🚀 Impact: Minimizing Intervention
+## Impact: Minimizing Intervention
 By moving the "logic check" from the human to the **Gemini-powered Judge** and the "correction phase" to the **Reflexion module**, AutoDAG transforms the user from a "babysitter" into a "supervisor." The agent handles the messy middle of task execution, only returning to the human once the objective is met.
 
 ---
-
-## 📂 Getting Started
-
-1. **Clone the repository:**
-   ```bash
-   git clone [https://github.com/your-username/autodag-orchestrator.git](https://github.com/your-username/autodag-orchestrator.git)
