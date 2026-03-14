@@ -60,7 +60,7 @@ def evaluate_dag(state: SynapseState) -> dict:
         
     # --- METRICS 2 & 3: Relevance & Dependencies via Gemini (10 Marks) ---
     judge_llm = ChatGoogleGenerativeAI(
-        model="gemini-2.0-flash",
+        model="gemini-1.5-flash-latest",
         temperature=0.0,
         api_key=os.getenv("GOOGLE_API_KEY")
     )
