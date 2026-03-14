@@ -1,0 +1,31 @@
+{
+  "query": "Latest breakthrough in Deep Reinforcement Learning",
+  "follow_up_questions": null,
+  "answer": null,
+  "images": [],
+  "results": [
+    {
+      "url": "https://www.mdpi.com/2673-2688/6/3/46",
+      "title": "Deep Reinforcement Learning: A Chronological Overview ...",
+      "content": "by J Terven \u00b7 2025 \u00b7 Cited by 56 \u2014 The transformative breakthrough occurred when deep Q-networks (DQNs) demonstrated human-level performance on dozens of Atari 2600 video games using only raw",
+      "score": 0.99968493,
+      "raw_content": null
+    },
+    {
+      "url": "https://www.linkedin.com/pulse/breakthroughs-reinforcement-learning-new-era-ai-advancements-91bzc",
+      "title": "Breakthroughs in Reinforcement Learning: A New Era of AI ...",
+      "content": "These breakthroughs have expanded the scope and efficiency of RL, enabling more complex problem-solving and decision-making processes.",
+      "score": 0.9961456,
+      "raw_content": null
+    },
+    {
+      "url": "https://research.nvidia.com/labs/par/category/reinforcement-learning.html",
+      "title": "Reinforcement Learning | NVIDIA Research Tel-Aviv Lab",
+      "content": "In recent years, there has been significant progress in applying deep reinforcement learning (RL) for solving challenging problems across a wide variety of",
+      "score": 0.9911527,
+      "raw_content": null
+    }
+  ],
+  "response_time": 0.63,
+  "request_id": "96cc659f-119a-4cfa-a4f0-fde7c1b8e332"
+}
