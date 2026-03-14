@@ -24,11 +24,12 @@ def download_all_specs():
         headers = {
             "apikey": SUPABASE_KEY,
             "Authorization": f"Bearer {SUPABASE_KEY}",
-            "Accept-Profile": schema # This is the magic header for Supabase
+            "Accept-Profile": schema,  # Tells Supabase which schema to use for data
+            "Content-Profile": schema  # Tells Supabase which schema to DOCUMENT in the spec
         }
         
         try:
-            # We hit the base rest/v1/ endpoint with the specific schema header
+            # We hit the base rest/v1/ endpoint with the specific schema headers
             response = requests.get(f"{SUPABASE_URL}/rest/v1/", headers=headers)
             response.raise_for_status()
             
