@@ -105,6 +105,6 @@ def test_openapi_tool():
         print(f"OpenAPI Tools Test Failed: {e}")
 
 if __name__ == "__main__":
-    # test_tavily_tool()
-    # test_wikipedia_and_arxiv_tools()
+    test_tavily_tool()
+    test_wikipedia_and_arxiv_tools()
     test_openapi_tool()

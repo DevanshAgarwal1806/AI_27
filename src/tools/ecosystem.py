@@ -22,7 +22,7 @@ def wikipedia_full_read_tool(page_title: str) -> str:
     """
     try:
         # load_max_docs=1 ensures we only get the exact page requested
-        loader = WikipediaLoader(query=page_title, load_max_docs=1)
+        loader = WikipediaLoader(query=page_title, load_max_docs=1, doc_content_chars_max=1000000)
         docs = loader.load()
         if docs:
             return docs[0].page_content
