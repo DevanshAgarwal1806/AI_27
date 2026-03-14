@@ -9,10 +9,7 @@ langchain-google-genai
 # --- Environment Management ---
 python-dotenv
 
-# --- Upcoming Dependencies (Phase 2 & 3 / Testing) ---
-# langchain-community
-# tavily-python
-# deepevalaiohappyeyeballs==2.6.1
+aiohappyeyeballs==2.6.1
 aiohttp==3.13.3
 aiosignal==1.4.0
 annotated-doc==0.0.4
@@ -33,6 +30,7 @@ distro==1.9.0
 execnet==2.1.2
 feedparser==6.0.12
 filetype==1.2.0
+firecrawl-py==4.19.0
 frozenlist==1.8.0
 google-auth==2.49.1
 google-genai==1.67.0
@@ -76,11 +74,12 @@ opentelemetry-sdk==1.40.0
 opentelemetry-semantic-conventions==0.61b0
 orjson==3.11.7
 ormsgpack==1.12.2
-packaging==23.2
+pandas==3.0.1
 pluggy==1.6.0
 portalocker==3.2.0
 posthog==5.4.0
 propcache==0.4.1
+psycopg2-binary==2.9.11
 pyasn1==0.6.2
 pyasn1_modules==0.4.2
 pycparser==3.0
