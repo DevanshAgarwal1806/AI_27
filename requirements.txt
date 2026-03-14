@@ -1,0 +1,15 @@
+# --- Core Orchestration ---
+langgraph
+langchain-core
+
+# --- LLM Providers (Phase 1) ---
+langchain-groq
+langchain-google-genai
+
+# --- Environment Management ---
+python-dotenv
+
+# --- Upcoming Dependencies (Phase 2 & 3 / Testing) ---
+# langchain-community
+# tavily-python
+# deepeval
