@@ -59,7 +59,7 @@ def evaluate_dag(state: SynapseState) -> dict:
     judge_llm = ChatGroq(
         model="llama-3.3-70b-versatile",
         temperature=0.0, # Keep this at 0.0 so the judge is strict and deterministic
-        api_key=os.getenv("GROQ_API_KEY_2") # <--- Using Key 2 here!
+        api_key=os.getenv("GROQ_API_KEY_EVALUATOR") 
     )
     
     user_content = f"Objective: {user_prompt}\n\nProposed DAG:\n{json.dumps(dag, indent=2)}"
