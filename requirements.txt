@@ -8,6 +8,8 @@ langchain-google-genai
 
 # --- Environment Management ---
 python-dotenv
+fastapi==0.111.1
+uvicorn[standard]==0.23.2
 
 aiohappyeyeballs==2.6.1
 aiohttp==3.13.3
