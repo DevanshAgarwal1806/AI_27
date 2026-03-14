@@ -2,6 +2,8 @@ import os
 import json
 from dotenv import load_dotenv
 
+from src.tools.openapi_parser import get_openapi_tools
+
 # Load environment variables (API keys)
 load_dotenv()
 
@@ -23,7 +25,7 @@ def save_to_file(filename, content, is_json=False):
             f.write(content)
     print(f"Saved full output to: {filepath}")
 
-def test_all_tools():
+def test_tavily_tool():
     print("--- Testing Tavily Web Search ---")
     if not os.getenv("TAVILY_API_KEY"):
         print("SKIP: TAVILY_API_KEY not found in .env file.\n")
@@ -39,7 +41,8 @@ def test_all_tools():
             print()
         except Exception as e:
             print(f"Tavily Search Failed: {e}\n")
-
+            
+def test_wikipedia_and_arxiv_tools():
     print("Loading research tools...")
     research_tools = get_research_tools()
     wiki_search, wiki_deep_read, arxiv_search, arxiv_deep_read = research_tools
@@ -88,5 +91,20 @@ def test_all_tools():
     except Exception as e:
         print(f"Arxiv Deep Reader Failed: {e}")
 
+def test_openapi_tool():
+    print("\n--- Testing OpenAPI Tools ---")
+    try:
+        openapi_tools = get_openapi_tools()
+        if not openapi_tools:
+            print("No OpenAPI tools generated. Please add a valid OpenAPI spec to data/openapi_specs/ and try again.")
+            return
+        print(f"Success! Generated {len(openapi_tools)} OpenAPI tools.")
+        for tool in openapi_tools:
+            print(f"- {tool.name}: {tool.description}")
+    except Exception as e:
+        print(f"OpenAPI Tools Test Failed: {e}")
+
 if __name__ == "__main__":
-    test_all_tools()
+    # test_tavily_tool()
+    # test_wikipedia_and_arxiv_tools()
+    test_openapi_tool()
