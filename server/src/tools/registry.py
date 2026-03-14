@@ -7,7 +7,8 @@ from src.tools.openapi_parser import get_openapi_tools
 
 def get_all_tools():
     """Single source of truth for all available tools."""
-    return get_search_tools() + get_research_tools() + get_openapi_tools()
+    return get_search_tools() + get_research_tools() 
+    # return get_search_tools() + get_research_tools() + get_openapi_tools()
 
 
 def build_tool_manifest() -> str:

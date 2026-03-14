@@ -21,7 +21,7 @@ def build_initial_state(prompt: str) -> dict:
     }
 
 
-# ── Warning display ───────────────────────────────────────────────────────────
+# ── Warning display ─────────────────────────────────────────────────────────
 
 def print_warnings(warnings: list[dict]) -> None:
     if not warnings:
@@ -52,35 +52,41 @@ def print_warnings(warnings: list[dict]) -> None:
 
 # ── Final output display ──────────────────────────────────────────────────────
 
+# def print_final_output(result: dict) -> None:
+#     sep = "═" * 64
+#     print(f"\n{sep}")
+#     print("  FINAL OUTPUT")
+#     print(sep)
+
+#     output = result.get("final_output")
+#     if output:
+#         print(f"\n{output}\n")
+#     else:
+#         # final_output is only set when executor hits DONE cleanly.
+#         # If the graph ended via the 'fail' route it may be None —
+#         # fall back to printing whatever succeeded in the scratchpad.
+#         scratchpad = result.get("reflexion_scratchpad", [])
+#         successes = [e for e in scratchpad if e.startswith("SUCCESS|")]
+
+#         if successes:
+#             print("\nPartial results from completed tasks:\n")
+#             for entry in successes:
+#                 parts = entry.split("|")
+#                 task_id  = parts[1] if len(parts) > 1 else "unknown"
+#                 content  = parts[2] if len(parts) > 2 else ""
+#                 print(f"  [{task_id}] {content}\n")
+#         else:
+#             print("\n  No output produced. Check warnings above.\n")
+
+#     print(sep)
+
 def print_final_output(result: dict) -> None:
     sep = "═" * 64
     print(f"\n{sep}")
     print("  FINAL OUTPUT")
     print(sep)
-
-    output = result.get("final_output")
-    if output:
-        print(f"\n{output}\n")
-    else:
-        # final_output is only set when executor hits DONE cleanly.
-        # If the graph ended via the 'fail' route it may be None —
-        # fall back to printing whatever succeeded in the scratchpad.
-        scratchpad = result.get("reflexion_scratchpad", [])
-        successes = [e for e in scratchpad if e.startswith("SUCCESS|")]
-
-        if successes:
-            print("\nPartial results from completed tasks:\n")
-            for entry in successes:
-                parts = entry.split("|")
-                task_id  = parts[1] if len(parts) > 1 else "unknown"
-                content  = parts[2] if len(parts) > 2 else ""
-                print(f"  [{task_id}] {content}\n")
-        else:
-            print("\n  No output produced. Check warnings above.\n")
-
+    print(f"\n{result.get('final_output', 'No output produced.')}\n")
     print(sep)
-
-
 # ── Debug helpers (optional, remove in production) ───────────────────────────
 
 def print_dag(dag: dict) -> None:
@@ -117,8 +123,9 @@ def run(prompt: str, debug: bool = False) -> dict:
     if debug:
         print_dag(result.get("current_dag", {}))
         print_scratchpad(result.get("reflexion_scratchpad", []))
-
+    
     print_warnings(result.get("execution_warnings", []))
+    # Synthesize final_output
     print_final_output(result)
 
     return result
