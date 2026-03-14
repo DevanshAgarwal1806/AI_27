@@ -2,41 +2,45 @@ from langgraph.graph import StateGraph, END
 from src.graph.state import SynapseState
 from src.graph.nodes.generator import generate_dag
 from src.graph.nodes.evaluator import evaluate_dag
-from src.graph.edges.routers import route_evaluation
+from src.graph.nodes.executor import execute_task
+from src.graph.nodes.reflector import reflect_on_execution
+from src.graph.edges.routers import route_evaluation, route_execution
+
 
 def build_synapse_graph():
-    """
-    Compiles the LangGraph for SynapseAI.
-    """
-    # 1. Initialize the StateGraph with our TypedDict
     builder = StateGraph(SynapseState)
 
-    # 2. Add the nodes
+    # Nodes
     builder.add_node("generator", generate_dag)
     builder.add_node("evaluator", evaluate_dag)
-    
-    # Placeholder for Phase 2/3 nodes
-    # builder.add_node("executor", execute_task)
-    # builder.add_node("reflector", reflect_on_execution)
+    builder.add_node("executor", execute_task)
+    builder.add_node("reflector", reflect_on_execution)
 
-    # 3. Define the Entry Point
+    # Entry point
     builder.set_entry_point("generator")
 
-    # 4. Define the Standard Edges
-    # After generation, it MUST go to evaluation
+    # Phase 1 loop
     builder.add_edge("generator", "evaluator")
-
-    # 5. Define Conditional Edges (The Convergence Loop)
     builder.add_conditional_edges(
-        "evaluator",             # The starting node
-        route_evaluation,        # The routing function
+        "evaluator",
+        route_evaluation,
         {
-            "generate": "generator", # If route_evaluation returns "generate", go to generator
-            "execute": END           # Temporarily routing to END. Once we build the executor, this will map to "executor"
+            "generate": "generator",
+            "execute": "executor",
         }
     )
 
-    # 6. Compile the graph
-    graph = builder.compile()
-    
-    return graph
+    # Phase 3 loop: executor → reflector → router → back or done
+    builder.add_edge("executor", "reflector")
+    builder.add_conditional_edges(
+        "reflector",
+        route_execution,
+        {
+            "next_task": "executor",   # success, still tasks left
+            "retry":     "executor",   # failure, retry same task
+            "done":      END,          # all tasks complete
+            "fail":      END,          # task exhausted retries
+        }
+    )
+
+    return builder.compile()

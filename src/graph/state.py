@@ -21,6 +21,7 @@ class SynapseState(TypedDict):
     # The Reflexion Scratchpad uses Annotated + operator.add.
     # This tells LangGraph to APPEND new logs to this list rather than OVERWRITING it.
     reflexion_scratchpad: Annotated[List[str], operator.add] 
-    
+     # Made Optional so the graph can reach END without having set these
     # --- The Output ---
     final_output: str            # The final result delivered back to the user
+    execution_warnings: Annotated[List[dict], operator.add]

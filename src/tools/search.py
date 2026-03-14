@@ -1,7 +1,7 @@
 import os
 from langchain_tavily import TavilySearch
 
-def get_search_tool():
+def get_search_tools():
     """
     Initializes the Tavily Search tool for agent-optimized web intelligence.
     The LLM will use this when it needs to find real-time, up-to-date information.

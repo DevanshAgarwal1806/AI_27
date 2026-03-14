@@ -1,9 +1,9 @@
-import os
 import json
 from langchain_groq import ChatGroq
 from langchain_core.messages import SystemMessage, HumanMessage
 from src.graph.state import SynapseState
 from src.config.prompts import EVALUATOR_SYSTEM_PROMPT
+from src.config.settings import GROQ_API_KEY_EVALUATOR
 
 def check_for_cycles(tasks: list) -> bool:
     """
@@ -59,7 +59,7 @@ def evaluate_dag(state: SynapseState) -> dict:
     judge_llm = ChatGroq(
         model="llama-3.3-70b-versatile",
         temperature=0.0, # Keep this at 0.0 so the judge is strict and deterministic
-        api_key=os.getenv("GROQ_API_KEY_EVALUATOR") 
+        api_key=GROQ_API_KEY_EVALUATOR 
     )
     
     user_content = f"Objective: {user_prompt}\n\nProposed DAG:\n{json.dumps(dag, indent=2)}"
