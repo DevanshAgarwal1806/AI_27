@@ -10,6 +10,7 @@ load_dotenv()
 # Import the tools you built
 from src.tools import get_research_tools
 from src.tools import get_search_tool
+from src.tools import firecrawl_scrape
 
 def save_to_file(filename, content, is_json=False):
     """Helper function to save massive text outputs to a file."""
@@ -103,8 +104,19 @@ def test_openapi_tool():
             print(f"- {tool.name}: {tool.description}")
     except Exception as e:
         print(f"OpenAPI Tools Test Failed: {e}")
+        
+def test_firecrawl_tool():
+    print("\n--- Testing Firecrawl Scrape Tool ---")
+    try:
+        url = "https://en.wikipedia.org/wiki/Artificial_intelligence"
+        result = firecrawl_scrape.invoke({"url": url})
+        print(f"Success! Scraped content length: {len(result)} characters.")
+        save_to_file("firecrawl_wikipedia_ai.md", result)
+    except Exception as e:
+        print(f"Firecrawl Scrape Tool Failed: {e}")
 
 if __name__ == "__main__":
-    test_tavily_tool()
-    test_wikipedia_and_arxiv_tools()
-    test_openapi_tool()
+    # test_tavily_tool()
+    # test_wikipedia_and_arxiv_tools()
+    # test_openapi_tool()
+    test_firecrawl_tool()

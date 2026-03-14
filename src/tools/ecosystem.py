@@ -13,6 +13,12 @@ from langchain_community.document_loaders import ArxivLoader
 from langchain_community.agent_toolkits.github.toolkit import GitHubToolkit
 from langchain_community.utilities.github import GitHubAPIWrapper
 
+from dotenv import load_dotenv
+
+from firecrawl import FirecrawlApp
+
+load_dotenv()
+
 @tool
 def wikipedia_full_read_tool(page_title: str) -> str:
     """
@@ -68,3 +74,20 @@ def get_research_tools():
         arxiv_search_tool, 
         arxiv_full_read_tool
     ]
+
+firecrawl = FirecrawlApp(api_key=os.getenv("FIRECRAWL_API_KEY"))
+
+@tool
+def firecrawl_scrape(url: str) -> str:
+    """
+    Scrape a webpage and return clean markdown content.
+    Use this when the agent needs to read the full content of a webpage.
+    Input should be a full URL.
+    """
+    
+    result = firecrawl.scrape(
+        url,
+        formats=["markdown"]
+    )
+
+    return result.markdown
