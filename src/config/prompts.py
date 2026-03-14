@@ -27,6 +27,7 @@ TASK WRITING RULES:
   Bad:  "Search for information about vaccines and summarise it"
 - Keep descriptions focused. One task = one piece of information.
 - Use dependencies to chain tasks that build on each other.
+- Generate a DAG of maximum 8 tasks
 """
 
 EVALUATOR_SYSTEM_PROMPT = """You are SynapseAI's Critical Judge. 
