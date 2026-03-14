@@ -5,9 +5,15 @@ An autonomous AI agent designed to decompose complex human prompts into executab
 ---
 
 ## Problem Statement
-The current generation of AI agents suffers from a significant bottleneck: **excessive human intervention.** While modern LLMs are powerful, current agentic tools frequently stall, hallucinate, or lose track of the objective, requiring a human user to constantly "nudge," correct, or restart the process.
+Design and develop an autonomous AI agent capable of decomposing complex tasks into sub-tasks, selecting appropriate tools (APIs, databases, search engines), maintaining contextual memory, and executing multi-step workflows with minimal human intervention.
 
-**AutoDAG** is built to bridge this gap. Our goal is to drastically decrease human oversight by implementing a self-correcting architecture that:
+
+### Challenges faced by traditional AI tools
+The current generation of AI tools suffers from a significant bottleneck, they require too much human intervention, for any particular task, humans are required to evaluate the output at every step and give constant feedback, this is where most professionals using Agentic Agents end up wasting huge amounts of energy and time.
+
+While modern LLMs are powerful, current agentic tools frequently stall, hallucinate, or lose track of the objective, requiring a human user to constantly "nudge", correct, or restart the process.
+
+**AgentForge** is built to bridge this gap. Our goal is to drastically decrease human oversight by implementing a self-correcting architecture that:
 1.  **Self-Evaluates:** Uses an "LLM-as-a-Judge" loop to refine plans before execution.
 2.  **Self-Configures:** Ingests entire API suites via OpenAPI specs to eliminate manual tool setup.
 3.  **Self-Corrects:** Employs a "Reflexion" phase to observe failures and re-route logic autonomously.
@@ -54,6 +60,6 @@ The agent uses a **Custom JSON Structure** as an internal workspace to maintain 
 ---
 
 ## Impact: Minimizing Intervention
-By moving the "logic check" from the human to the **Gemini-powered Judge** and the "correction phase" to the **Reflexion module**, AutoDAG transforms the user from a "babysitter" into a "supervisor." The agent handles the messy middle of task execution, only returning to the human once the objective is met.
+By moving the "logic check" from the human to the **Gemini-powered Judge** and the "correction phase" to the **Reflexion module**, AgentForge transforms the user from a "babysitter" into a "supervisor." The agent handles the messy middle of task execution, only returning to the human once the objective is met.
 
 ---
