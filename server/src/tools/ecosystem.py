@@ -1,4 +1,8 @@
+import json
 import os
+from urllib.error import HTTPError, URLError
+from urllib.parse import urlencode
+from urllib.request import urlopen
 import wikipedia
 from langchain_core.tools import tool
 
@@ -49,7 +53,7 @@ def arxiv_full_read_tool(paper_id: str) -> str:
         return "Paper not found."
     except Exception as e:
         return f"Error loading full paper: {e}"
-
+    
 @tool
 def aviationstack_flights_tool(
     flight_iata: str = "",

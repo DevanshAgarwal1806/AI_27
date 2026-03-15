@@ -22,33 +22,59 @@ MAX_GENERALIZATION_STEPS = TOOL_MAX_GENERALIZATION_STEPS
 execution_warnings: list[dict] = []
 
 
-def select_tool(task: dict, tool_map: dict[str, object]) -> tuple[object | None, str]:
+def select_tool(
+    task: dict,
+    tool_map: dict[str, object],
+    excluded_tool_names: set[str] | None = None,
+) -> tuple[object | None, str, list[dict]]:
     """
     Given a task dict and a {name: tool} map, returns:
-      (tool_object, input_string)
+      (tool_object, input_string, warnings)
 
-    If no confident match is found after generalization, returns (None, "").
-    Appends a warning to `execution_warnings` whenever generalization occurs.
+    If no confident match is found after generalization, returns
+    (None, "", warnings).
+    Appends any generated warnings to `execution_warnings`.
     """
+    excluded_tool_names = excluded_tool_names or set()
+    candidate_map = {
+        name: tool
+        for name, tool in tool_map.items()
+        if name not in excluded_tool_names
+    }
+
+    if not candidate_map:
+        warning = _build_warning(
+            task=task,
+            original=task.get("description", ""),
+            simplified=task.get("description", ""),
+            tool_name=None,
+            steps_taken=0,
+        )
+        execution_warnings.append(warning)
+        return None, "", [warning]
+
     original_description = task.get("description", "")
     current_description = original_description
+    warnings: list[dict] = []
 
     for step in range(MAX_GENERALIZATION_STEPS + 1):
-        tool_name, tool_input, score = _score_tools(current_description, tool_map)
+        tool_name, tool_input, score = _score_tools(current_description, candidate_map)
 
         if score >= MATCH_THRESHOLD:
             if step > 0:
                 # Generalization was needed — record a warning
-                execution_warnings.append({
-                    "task_id":      task.get("id", "unknown"),
-                    "original":     original_description,
-                    "simplified":   current_description,
-                    "tool_chosen":  tool_name,
-                    "steps_taken":  step,
-                })
+                warning = _build_warning(
+                    task=task,
+                    original=original_description,
+                    simplified=current_description,
+                    tool_name=tool_name,
+                    steps_taken=step,
+                )
+                execution_warnings.append(warning)
+                warnings.append(warning)
                 _print_warning(task.get("id"), original_description, current_description)
 
-            return tool_map[tool_name], tool_input
+            return candidate_map[tool_name], tool_input, warnings
 
         if step < MAX_GENERALIZATION_STEPS:
             print(
@@ -58,20 +84,22 @@ def select_tool(task: dict, tool_map: dict[str, object]) -> tuple[object | None,
             current_description = _generalize(
                 original_description=original_description,
                 current_description=current_description,
-                tool_map=tool_map,
+                tool_map=candidate_map,
                 step=step,
             )
 
     # Exhausted all generalization steps — no match
-    execution_warnings.append({
-        "task_id":      task.get("id", "unknown"),
-        "original":     original_description,
-        "simplified":   current_description,
-        "tool_chosen":  None,
-        "steps_taken":  MAX_GENERALIZATION_STEPS,
-    })
+    warning = _build_warning(
+        task=task,
+        original=original_description,
+        simplified=current_description,
+        tool_name=None,
+        steps_taken=MAX_GENERALIZATION_STEPS,
+    )
+    execution_warnings.append(warning)
+    warnings.append(warning)
     _print_warning(task.get("id"), original_description, current_description, failed=True)
-    return None, ""
+    return None, "", warnings
 
 
 # ── Internal helpers ──────────────────────────────────────────────────────────
@@ -188,6 +216,22 @@ def _generalize(
 def _fallback_tool(tool_map: dict[str, object]) -> str:
     """Returns the name of the first available tool as a last resort."""
     return next(iter(tool_map))
+
+
+def _build_warning(
+    task: dict,
+    original: str,
+    simplified: str,
+    tool_name: str | None,
+    steps_taken: int,
+) -> dict:
+    return {
+        "task_id": task.get("id", "unknown"),
+        "original": original,
+        "simplified": simplified,
+        "tool_chosen": tool_name,
+        "steps_taken": steps_taken,
+    }
 
 
 def _print_warning(

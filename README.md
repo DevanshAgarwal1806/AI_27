@@ -52,69 +52,34 @@ This phase focusses on the execution of the DAG. LangGraph executes it step-by-s
 
 | Layer | Technology |
 | :--- | :--- |
-| **Inference (Planning)** | **Groq** (Llama 3 / 70B) |
-| **Reasoning (Evaluation)** | **Gemini Flash 2.0** |
-| **Testing Framework** | **DeepEval** (Answer Relevancy) |
-| **Orchestration and State** | **LangGraph** |
-| **State Management** | **Custom JSON Structure** |
-| **Tooling Protocols** | **OpenAPI (Swagger)** |
-| **Search Intelligence** | **Tavily API** |
+| **DAG Construction and Inference** | **Groq** (Llama 3 / 70B) |
+| **TEvaluation Framework** | **DeepEval (Answer Relevancy)** |
+| **Task Orchestration and State Handling** | **LangGraph** |
+| **Web Scraping and Knowledge Retrieval** | **Tavily and Firecrawl, Wikipedia, arXiv extractors** |
+| **Frontend Layer** | **React.js, Supabase, Google OAuth** |
 
 ---
 
 ## Impact: Minimizing Intervention
-By moving the "logic check" from the human to the **Gemini-powered Judge** and the "correction phase" to the **Reflexion module**, SynapseAI transforms the user from a "babysitter" into a "supervisor." The agent handles the messy middle of task execution, only returning to the human once the objective is met.
-
-## Directory Structure
-
-```
-SynapseAI/
-├── src/                        # All your core application code lives here
-│   ├── graph/                  # The LangGraph Orchestrator (The Brain)
-│   │   ├── __init__.py
-│   │   ├── state.py            # Defines the AgentForgeState (your TypedDict)
-│   │   ├── workflow.py         # Compiles the StateGraph and connects everything
-│   │   ├── nodes/              # The functions that actually do the work
-│   │   │   ├── __init__.py
-│   │   │   ├── generator.py    # Phase 1: Groq DAG generation logic
-│   │   │   ├── evaluator.py    # Phase 1: Gemini + DeepEval scoring logic
-│   │   │   ├── executor.py     # Phase 2 & 3: Tool execution logic
-│   │   │   └── reflector.py    # Phase 3: Reflexion and recovery logic
-│   │   └── edges/              # The routing logic
-│   │       ├── __init__.py
-│   │       └── routers.py      # Conditional edge functions (e.g., route_evaluation)
-│   ├── tools/                  # The Agent's Hands
-│   │   ├── __init__.py
-│   │   ├── openapi_parser.py   # Code to ingest specs and generate dynamic tools
-│   │   ├── search.py           # Tavily API integration
-│   │   └── ecosystem.py        # langchain-community integrations (GitHub, Arxiv)
-│   ├── config/                 # Configurations and Prompts
-│   │   ├── __init__.py
-│   │   ├── prompts.py          # Centralized system prompts for Groq, Gemini, etc.
-│   │   └── settings.py         # Environment variable loaders
-│   └── api/                    # (Optional) FastAPI routes if building a frontend
-│       ├── __init__.py
-│       └── server.py           
-├── data/                       # Local data storage
-│   ├── openapi_specs/          # Drop your raw Swagger JSON/YAML files here
-│   └── scratchpads/            # Local SQLite database for LangGraph Checkpointer
-├── evals/                      # DeepEval testing framework
-│   ├── __init__.py
-│   └── test_dag_relevancy.py   # Your custom evaluation metrics
-├── .env                        # YOUR API KEYS (Never commit this to GitHub!)
-├── .gitignore                  # Tells Git to ignore .env and __pycache__
-├── requirements.txt            # All your pip install dependencies
-└── README.md                   # The architecture document you shared earlier
-```
+By moving the "logic check" from the human to the **Grok-powered Judge** and the "correction phase" to the **Reflexion module**, SynapseAI transforms the user from a "babysitter" into a "supervisor." The agent handles the messy middle of task execution, only returning to the human once the objective is met.
 
 ---
 
-
-Run backend:
-cd server
+## Execution
+**Installing Dependencies:**
+```bash
 pip install -r requirements.txt
-python -m uvicorn src.api.server:app --host 127.0.0.1 --port 8000 --reload
+```
 
-Run frontend:
+**Run Backend:**
+```bash
+cd server
+python -m uvicorn src.api.server:app --host 127.0.0.1 --port 8000 --reload
+```
+
+**Run frontend:**
+```bash
+cd client
 npm i 
 npm run dev
+```
