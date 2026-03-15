@@ -108,3 +108,13 @@ SynapseAI/
 ```
 
 ---
+
+
+Run backend:
+cd server
+pip install -r requirements.txt
+python -m uvicorn src.api.server:app --host 127.0.0.1 --port 8000 --reload
+
+Run frontend:
+npm i 
+npm run dev

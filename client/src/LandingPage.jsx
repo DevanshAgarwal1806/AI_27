@@ -385,7 +385,7 @@ export default function LandingPage() {
             </p>
             <div className="hero-cta">
               <a href="#flow"              className="btn-primary">Explore Architecture</a>
-              <a href="https://github.com" className="btn-ghost">View on GitHub</a>
+              <a href="https://github.com/DevanshAgarwal1806/AI_27" className="btn-ghost">View on GitHub</a>
             </div>
           </div>
           <DAGVisualization />
@@ -485,7 +485,7 @@ export default function LandingPage() {
         <h2 className="cta-title">Ready to Deploy?</h2>
         <p className="cta-sub">Clone the repo. Drop in your API keys. Let SynapseAI take over.</p>
         <div className="cta-btns">
-          <a href="https://github.com" className="btn-primary">Clone on GitHub</a>
+          <a href="https://github.com/DevanshAgarwal1806/AI_27" className="btn-primary">Clone on GitHub</a>
           <a href="#phases"            className="btn-ghost">Read the Docs</a>
         </div>
       </section>
