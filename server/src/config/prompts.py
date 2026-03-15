@@ -26,7 +26,10 @@ TASK WRITING RULES:
   Good: "Recent breakthroughs in mRNA vaccine technology 2024"
   Bad:  "Search for information about vaccines and summarise it"
 - Keep descriptions focused. One task = one piece of information.
-- Use dependencies to chain tasks that build on each other.
+- Only add a dependency when one task truly requires the output of another.
+- Prefer parallel branches for independent research tracks instead of turning everything into one long chain.
+- Use multi-parent dependencies when a later step combines results from two or more earlier tasks.
+- A valid DAG can contain several root tasks with `dependencies: []`.
 - Generate a DAG of maximum 8 tasks
 """
 
@@ -35,6 +38,11 @@ Analyze the proposed DAG (JSON) against the user's objective.
 Evaluate the DAG on two criteria, assigning a score from 0 to 5 for each:
 1. Relevance (0-5): How well the DAG comprehensively covers the user's prompt.
 2. Dependency Logic (0-5): Do the dependencies make logical sense? Are tasks ordered correctly without missing prerequisites or backwards execution?
+
+Be strict about over-serialised graphs:
+- Penalize DAGs that make unrelated tasks depend on each other.
+- Reward DAGs that expose parallelizable branches when the objective naturally decomposes that way.
+- A chain is only correct when each step genuinely depends on the previous one.
 
 Output your response STRICTLY in the following JSON format:
 {{

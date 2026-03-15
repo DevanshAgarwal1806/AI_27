@@ -57,115 +57,144 @@ function AssistantBubble({ text, animate }) {
   );
 }
 
-// ─── Extract a human-readable description from any DAG node value ─────────────
-function extractDesc(val) {
-  if (typeof val === "string") return val.trim();
-  if (Array.isArray(val)) {
-    if (val.length === 0) return "—";
-    const parts = val.map((item) => {
-      if (typeof item === "string") return item;
-      if (item && typeof item === "object") {
-        return (
-          item.description || item.desc || item.summary ||
-          item.label || item.name || item.title || item.id || null
-        );
-      }
-      return null;
-    }).filter(Boolean);
-    if (parts.length) return parts.join(" → ");
-    return `${val.length} item${val.length !== 1 ? "s" : ""}`;
+// ── Reduced DAG node dimensions to fit more nodes ──────────────────────────
+const DAG_NODE_WIDTH = 120;
+const DAG_NODE_HEIGHT = 58;
+const DAG_COL_GAP = 16;
+const DAG_ROW_GAP = 40;
+const DAG_PADDING_X = 14;
+const DAG_PADDING_Y = 16;
+
+function normalizeDagTasks(dag) {
+  if (Array.isArray(dag)) return dag.filter(Boolean);
+  if (!dag || typeof dag !== "object") return [];
+
+  if (Array.isArray(dag.tasks)) {
+    return dag.tasks.filter(Boolean);
   }
-  if (val && typeof val === "object") {
-    const d = val.description || val.desc || val.summary ||
-              val.label || val.name || val.title || val.status;
-    if (d) return String(d).trim();
-    const first = Object.values(val).find((v) => typeof v === "string");
-    if (first) return first.trim();
-    const arrVal = Object.values(val).find((v) => Array.isArray(v));
-    if (arrVal) return extractDesc(arrVal);
-    return `${Object.keys(val).length} field${Object.keys(val).length !== 1 ? "s" : ""}`;
+
+  if (Array.isArray(dag.nodes)) {
+    return dag.nodes.filter(Boolean).map((node, index) => ({
+      ...node,
+      id: node.id ?? `step_${index + 1}`,
+      dependencies: Array.isArray(node.dependencies) ? node.dependencies : [],
+    }));
   }
-  return String(val);
+
+  const entries = Object.entries(dag).filter(([, value]) => value && typeof value === "object");
+  const looksLikeTaskMap = entries.some(([, value]) => "description" in value || "dependencies" in value);
+
+  if (!looksLikeTaskMap) return [];
+
+  return entries.map(([id, value]) => ({
+    id,
+    description: value.description ?? value.label ?? "",
+    dependencies: Array.isArray(value.dependencies) ? value.dependencies : [],
+  }));
 }
 
-// Word-wrap into max 2 lines of maxLen chars each
-function wrapText(str, maxLen = 30) {
-  const words = str.split(/\s+/);
-  const lines = [];
-  let cur = "";
-  for (const w of words) {
-    const test = cur ? cur + " " + w : w;
-    if (test.length > maxLen && cur) { lines.push(cur); cur = w; if (lines.length === 2) break; }
-    else cur = test;
-  }
-  if (cur && lines.length < 2) lines.push(cur);
-  return lines.map((l, i) => (i === lines.length - 1 && l.length > maxLen) ? l.slice(0, maxLen - 1) + "…" : l);
-}
+function buildDagLayout(tasks) {
+  const taskMap = new Map(
+    tasks.map((task, index) => {
+      const id = task.id ?? `step_${index + 1}`;
+      return [
+        id,
+        {
+          ...task,
+          id,
+          dependencies: Array.isArray(task.dependencies) ? task.dependencies : [],
+        },
+      ];
+    }),
+  );
 
-// ─── LandingPage-style DAG for Dashboard (vertical, data-driven) ──────────────
-function DagGraph({ dag }) {
-  const [activeNode, setActiveNode] = useState(0);
+  const children = new Map();
+  const indegree = new Map();
 
-  // 1. Safely handle the incoming JSON as an array
-  const dagArray = Array.isArray(dag) ? dag : [];
-  const hasData = dagArray.length > 0;
-
-  // 2. Map the array to the existing UI node format
-  const nodes = dagArray.map((step, i) => {
-    // Alternate nodes left / right of centre for diamond-like feel
-    const offsets = [
-      { left: "20%" }, { left: "52%" }, { left: "20%" }, { left: "52%" },
-      { left: "20%" }, { left: "52%" }, { left: "20%" }, { left: "52%" },
-    ];
-    const isOrange = i % 2 === 1;
-    const desc = step.description || "";
-
-    return {
-      index: i, // We need the numeric index for the activeNode animation and edges
-      id: step.id, 
-      label: i === 0 ? "INPUT" : i === dagArray.length - 1 ? "OUTPUT" : `STEP ${i}`,
-      text: step.id, // Display "step_1" etc. as the main key
-      desc: desc.length > 28 ? desc.slice(0, 27) + "…" : desc,
-      top: `${8 + i * (86 / Math.max(dagArray.length - 1, 1))}%`,
-      left: (offsets[i % offsets.length] || { left: "30%" }).left,
-      delay: `${i * 0.1}s`,
-      orange: isOrange,
-      dependencies: step.dependencies || []
-    };
+  taskMap.forEach((_task, id) => {
+    indegree.set(id, 0);
+    children.set(id, []);
   });
 
-  // 3. Build edges by mapping "dependencies" strings back to numeric indices
-  const edges = [];
-  nodes.forEach((node) => {
-    node.dependencies.forEach(depId => {
-      const sourceNodeIndex = nodes.findIndex(n => n.id === depId);
-      if (sourceNodeIndex !== -1) {
-        edges.push([sourceNodeIndex, node.index]);
-      }
+  taskMap.forEach((task, id) => {
+    task.dependencies.forEach((depId) => {
+      if (!taskMap.has(depId)) return;
+      indegree.set(id, (indegree.get(id) ?? 0) + 1);
+      children.get(depId)?.push(id);
     });
   });
 
-  // Fallback: If no dependencies are provided, draw linear edges (0→1→2) 
-  // to ensure the UI still draws connecting lines like it used to.
-  if (edges.length === 0 && nodes.length > 1) {
-    nodes.slice(0, -1).forEach((_, i) => edges.push([i, i + 1]));
+  const queue = [];
+  indegree.forEach((count, id) => {
+    if (count === 0) queue.push(id);
+  });
+
+  const depthById = {};
+  const orderedIds = [];
+
+  while (queue.length > 0) {
+    const id = queue.shift();
+    orderedIds.push(id);
+    const depth = depthById[id] ?? 0;
+
+    children.get(id)?.forEach((childId) => {
+      depthById[childId] = Math.max(depthById[childId] ?? 0, depth + 1);
+      indegree.set(childId, (indegree.get(childId) ?? 1) - 1);
+      if (indegree.get(childId) === 0) queue.push(childId);
+    });
   }
 
-  // Animation loop
-  useEffect(() => {
-    if (!hasData) return;
-    const interval = setInterval(() => {
-      setActiveNode(prev => (prev + 1) % nodes.length);
-    }, 1200);
-    return () => clearInterval(interval);
-  }, [hasData, nodes.length]);
-
-  // SVG coordinate helper
-  const VB_W = 280, VB_H = 500;
-  const getCenter = (node) => ({
-    x: parseFloat(node.left) / 100 * VB_W + 60,
-    y: parseFloat(node.top)  / 100 * VB_H + 10,
+  taskMap.forEach((_task, id) => {
+    if (!orderedIds.includes(id)) {
+      orderedIds.push(id);
+      depthById[id] = depthById[id] ?? 0;
+    }
   });
+
+  const layers = [];
+  orderedIds.forEach((id) => {
+    const layerIndex = depthById[id] ?? 0;
+    if (!layers[layerIndex]) layers[layerIndex] = [];
+    layers[layerIndex].push(id);
+  });
+
+  const positions = {};
+  const maxColumns = Math.max(...layers.map((layer) => layer?.length ?? 0), 1);
+
+  layers.forEach((layer, layerIndex) => {
+    if (!layer?.length) return;
+    const rowWidth = layer.length * DAG_NODE_WIDTH + Math.max(0, layer.length - 1) * DAG_COL_GAP;
+    const totalWidth = maxColumns * DAG_NODE_WIDTH + Math.max(0, maxColumns - 1) * DAG_COL_GAP;
+    const startX = DAG_PADDING_X + Math.max(0, (totalWidth - rowWidth) / 2);
+
+    layer.forEach((id, index) => {
+      positions[id] = {
+        left: startX + index * (DAG_NODE_WIDTH + DAG_COL_GAP),
+        top: DAG_PADDING_Y + layerIndex * (DAG_NODE_HEIGHT + DAG_ROW_GAP),
+      };
+    });
+  });
+
+  return {
+    positions,
+    orderedTasks: orderedIds.map((id) => taskMap.get(id)).filter(Boolean),
+    width:
+      DAG_PADDING_X * 2 +
+      maxColumns * DAG_NODE_WIDTH +
+      Math.max(0, maxColumns - 1) * DAG_COL_GAP,
+    height:
+      DAG_PADDING_Y * 2 +
+      layers.length * DAG_NODE_HEIGHT +
+      Math.max(0, layers.length - 1) * DAG_ROW_GAP,
+  };
+}
+
+// ─── Visual DAG Graph ─────────────────────────────────────────────────────────
+function DagGraph({ dag }) {
+  const containerRef = useRef(null);
+  const tasks = normalizeDagTasks(dag);
+  const hasData = tasks.length > 0;
+  const { orderedTasks, positions, width, height } = buildDagLayout(tasks);
 
   if (!hasData) {
     return (
@@ -178,52 +207,59 @@ function DagGraph({ dag }) {
   }
 
   return (
-    <div className="db-dag-live-wrap">
-      <svg className="db-dag-svg" viewBox={`0 0 ${VB_W} ${VB_H}`}>
-        <defs>
-          <marker id="db-arrow" markerWidth="6" markerHeight="4" refX="3" refY="2" orient="auto">
-            <polygon points="0 0, 6 2, 0 4" fill="rgba(0,245,212,0.45)" />
-          </marker>
-          <filter id="db-glow" x="-40%" y="-40%" width="180%" height="180%">
-            <feGaussianBlur stdDeviation="2.5" result="blur" />
-            <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
-          </filter>
-        </defs>
+    <div className="dag-visual-wrap" ref={containerRef} style={{ "--dag-width": `${width}px`, "--dag-height": `${height}px` }}>
+      {/* ── SVG Layer for Connection Lines ── */}
+      <svg className="dag-svg-overlay" viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="xMinYMin meet">
+        {orderedTasks.map((step, i) => {
+          const stepId = step.id ?? `step_${i + 1}`;
+          const targetPos = positions[stepId];
+          
+          if (!targetPos || !step.dependencies?.length) return null;
 
-        {edges.map(([fromIndex, toIndex], i) => {
-          const a = getCenter(nodes[fromIndex]);
-          const b = getCenter(nodes[toIndex]);
-          const isActive = activeNode === fromIndex || activeNode === toIndex;
-          return (
-            <line
-              key={i}
-              x1={a.x} y1={a.y}
-              x2={b.x} y2={b.y}
-              stroke={isActive ? "rgba(0,245,212,0.65)" : "rgba(0,245,212,0.13)"}
-              strokeWidth={isActive ? "1.6" : "1"}
-              strokeDasharray={isActive ? "none" : "4,4"}
-              markerEnd="url(#db-arrow)"
-              style={{ transition: "all 0.4s" }}
-            />
-          );
+          return step.dependencies.map((depId) => {
+            const sourcePos = positions[depId];
+            if (!sourcePos) return null;
+
+            const sourceX = sourcePos.left + DAG_NODE_WIDTH / 2;
+            const sourceY = sourcePos.top + DAG_NODE_HEIGHT;
+            const targetX = targetPos.left + DAG_NODE_WIDTH / 2;
+            const targetY = targetPos.top;
+            const midY = sourceY + (targetY - sourceY) / 2;
+            const path = `M ${sourceX} ${sourceY} C ${sourceX} ${midY}, ${targetX} ${midY}, ${targetX} ${targetY}`;
+
+            return (
+              <path
+                key={`${depId}->${stepId}`}
+                d={path}
+                className="dag-edge"
+              />
+            );
+          });
         })}
       </svg>
 
-      {nodes.map(node => (
-        <div
-          key={node.id}
-          className={[
-            "db-dag-node",
-            node.orange ? "orange" : "",
-            activeNode === node.index ? "active" : "",
-          ].filter(Boolean).join(" ")}
-          style={{ top: node.top, left: node.left, animationDelay: node.delay }}
-        >
-          <span className="db-node-label">{node.label}</span>
-          <span className="db-node-key">{node.text}</span>
-          {node.desc && <span className="db-node-desc">{node.desc}</span>}
-        </div>
-      ))}
+      {/* ── Nodes Layer ── */}
+      <div className="dag-nodes-container" style={{ width: `${width}px`, height: `${height}px` }}>
+        {orderedTasks.map((step, i) => {
+          const stepId = step.id ?? `step_${i + 1}`;
+          const position = positions[stepId];
+          return (
+            <div
+              key={stepId}
+              data-id={stepId}
+              className="dag-node"
+              style={{ left: `${position?.left ?? 0}px`, top: `${position?.top ?? 0}px` }}
+            >
+              <div className="dag-node-header">
+                <span className="dag-node-id">{stepId}</span>
+              </div>
+              {step.description && (
+                <div className="dag-node-desc">{step.description}</div>
+              )}
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -379,6 +415,7 @@ export default function Dashboard() {
 
   const currentDag      = activeChat?.dag ?? {};
   const currentMessages = activeChat?.messages ?? [];
+  const dagTasks        = normalizeDagTasks(currentDag);
 
   return (
     <>
@@ -498,16 +535,12 @@ export default function Dashboard() {
           <div className="db-dag-header">
             <div className="db-header-left">
               <span className="db-dag-title">Execution DAG</span>
-              {(Array.isArray(currentDag) ? currentDag.length > 0 : Object.keys(currentDag).length > 0) && (
+              {dagTasks.length > 0 && (
                 <span className="dag-live-badge"><span className="dag-live-dot" />LIVE</span>
               )}
             </div>
             <span className="dag-node-count">
-              {Array.isArray(currentDag) && currentDag.length > 0
-                ? `${currentDag.length} node${currentDag.length !== 1 ? "s" : ""}`
-                : Object.keys(currentDag).length > 0
-                ? `${Object.keys(currentDag).length} node${Object.keys(currentDag).length !== 1 ? "s" : ""}`
-                : "—"}
+              {dagTasks.length > 0 ? `${dagTasks.length} node${dagTasks.length !== 1 ? "s" : ""}` : "-"}
             </span>
           </div>
           <div className="db-dag-body">
@@ -526,7 +559,7 @@ export default function Dashboard() {
           transition: grid-template-columns 0.3s cubic-bezier(0.4,0,0.2,1);
         }
         .db-layout.sidebar-open  { grid-template-columns: 14px 200px 1fr 340px; }
-        .db-layout.sidebar-closed { grid-template-columns: 14px 0px 1fr 340px; }
+        .db-layout.sidebar-closed { grid-template-columns: 14px 0px 1fr 1fr; }
 
         /* ── Sidebar toggle strip ── */
         .sidebar-toggle-strip {
@@ -764,7 +797,7 @@ export default function Dashboard() {
         }
         .dag-live-dot { width: 4px; height: 4px; border-radius: 50%; background: #00f5d4; animation: livePulse 1.5s ease-in-out infinite; }
         .dag-node-count { font-family: var(--font-mono); font-size: 0.58rem; color: var(--cyan); letter-spacing: 0.1em; }
-        .db-dag-body { flex: 1; overflow-y: auto; padding: 1rem 0.5rem 2rem; position: relative; }
+        .db-dag-body { flex: 1; overflow-y: auto; padding: 0.6rem 0.5rem 2rem; position: relative; }
         .db-dag-body::-webkit-scrollbar { width: 2px; }
         .db-dag-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
 
@@ -774,45 +807,80 @@ export default function Dashboard() {
         .dag-empty p { font-family: var(--font-mono); font-size: 0.72rem; color: var(--muted); }
         .dag-empty-sub { font-size: 0.62rem !important; opacity: 0.55; }
 
-        /* ── LandingPage-style DAG nodes (Dashboard version) ── */
-        .db-dag-live-wrap {
-          position: relative; width: 100%; min-height: 520px; height: auto;
+        /* ── Visual DAG Graph ── */
+        .dag-visual-wrap {
+          position: relative;
+          min-height: 100%;
+          overflow: auto;
         }
-        .db-dag-svg {
-          position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-          pointer-events: none; overflow: visible;
+        .dag-svg-overlay {
+          position: absolute;
+          top: 0; left: 0;
+          width: var(--dag-width, 100%);
+          height: var(--dag-height, 100%);
+          pointer-events: none;
+          z-index: 0;
         }
-        .db-dag-node {
-          position: absolute; transform: translate(-50%, -50%);
-          display: flex; flex-direction: column; gap: 2px;
-          background: rgba(0,245,212,0.06); border: 1px solid rgba(0,245,212,0.3);
-          border-radius: 8px; padding: 6px 10px; min-width: 104px; max-width: 132px;
-          font-family: var(--font-mono); font-size: 0.62rem; color: var(--white);
-          transition: all 0.35s ease;
-          animation: dbNodeIn 0.4s cubic-bezier(0.34,1.56,0.64,1) both;
-          cursor: default; z-index: 2;
+        .dag-edge {
+          stroke: var(--cyan, #00f5d4);
+          stroke-width: 1;
+          fill: none;
+          stroke-dasharray: 3 3;
+          opacity: 0.55;
+          animation: dashFlow 20s linear infinite;
         }
-        .db-dag-node.orange { background: rgba(255,107,53,0.08); border-color: rgba(255,107,53,0.35); }
-        .db-dag-node.active {
-          background: rgba(0,245,212,0.13); border-color: rgba(0,245,212,0.8);
-          box-shadow: 0 0 14px rgba(0,245,212,0.28), 0 0 28px rgba(0,245,212,0.10);
-          transform: translate(-50%, -50%) scale(1.04);
+        @keyframes dashFlow {
+          to { stroke-dashoffset: -1000; }
         }
-        .db-dag-node.orange.active {
-          background: rgba(255,107,53,0.15); border-color: rgba(255,107,53,0.9);
-          box-shadow: 0 0 14px rgba(255,107,53,0.3);
+        .dag-nodes-container {
+          position: relative;
+          z-index: 1;
         }
-        @keyframes dbNodeIn {
-          from { opacity: 0; transform: translate(-50%, -44%) scale(0.9); }
-          to   { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+
+        /* ── Compact DAG node ── */
+        .dag-node {
+          position: absolute;
+          background: rgba(7,8,14,0.95);
+          border: 1px solid rgba(0,245,212,0.22);
+          border-radius: 6px;
+          padding: 0.35rem 0.5rem;
+          width: 120px;
+          min-height: 58px;
+          max-width: 120px;
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+          text-align: center;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+          transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
         }
-        .db-node-label {
-          font-size: 0.46rem; letter-spacing: 0.18em; text-transform: uppercase;
-          color: var(--cyan); font-weight: 700; opacity: 0.7; margin-bottom: 1px;
+        .dag-node:hover {
+          transform: translateY(-2px);
+          border-color: var(--cyan, #00f5d4);
+          box-shadow: 0 4px 12px rgba(0,245,212,0.15);
         }
-        .db-dag-node.orange .db-node-label { color: var(--orange); }
-        .db-node-key { font-size: 0.62rem; font-weight: 700; color: var(--white); letter-spacing: 0.03em; line-height: 1.3; word-break: break-word; }
-        .db-node-desc { font-size: 0.52rem; color: var(--muted); line-height: 1.35; margin-top: 1px; }
+        .dag-node-header {
+          margin-bottom: 0.15rem;
+        }
+        .dag-node-id {
+          font-family: var(--font-mono);
+          font-size: 0.6rem;
+          font-weight: 700;
+          color: var(--cyan, #00f5d4);
+          letter-spacing: 0.04em;
+        }
+        .dag-node-desc {
+          font-family: var(--font-mono);
+          font-size: 0.54rem;
+          color: var(--white);
+          opacity: 0.7;
+          line-height: 1.35;
+          /* Clamp to 2 lines to keep node compact */
+          display: -webkit-box;
+          -webkit-line-clamp: 2;
+          -webkit-box-orient: vertical;
+          overflow: hidden;
+        }
 
         /* Responsive */
         @media (max-width: 860px) {
