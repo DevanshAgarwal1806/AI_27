@@ -24,4 +24,5 @@ class SynapseState(TypedDict):
      # Made Optional so the graph can reach END without having set these
     # --- The Output ---
     final_output: str            # The final result delivered back to the user
+    useful_output: True
     execution_warnings: Annotated[List[dict], operator.add]

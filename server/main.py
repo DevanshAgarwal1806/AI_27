@@ -17,6 +17,7 @@ def build_initial_state(prompt: str) -> dict:
         "current_step_id":      "",
         "reflexion_scratchpad": [],
         "final_output":         None,
+        "useful_output":        True,
         "execution_warnings":   [],
     }
 
@@ -110,25 +111,25 @@ def print_scratchpad(scratchpad: list[str]) -> None:
 def run(prompt: str, debug: bool = False) -> dict:
     print(f"\nSynapseAI — starting run")
     print(f"Prompt: {prompt}\n")
+    for i in range (2):
+        graph = build_synapse_graph()
+        initial_state = build_initial_state(prompt)
 
-    graph = build_synapse_graph()
-    initial_state = build_initial_state(prompt)
+        try:
+            result = graph.invoke(initial_state)
+        except Exception as e:
+            print(f"\n[FATAL] Graph execution failed: {e}")
+            raise
+        if result['useful_output'] == False:
+            continue
+        if debug:
+            print_dag(result.get("current_dag", {}))
+            print_scratchpad(result.get("reflexion_scratchpad", []))
 
-    try:
-        result = graph.invoke(initial_state)
-    except Exception as e:
-        print(f"\n[FATAL] Graph execution failed: {e}")
-        raise
-
-    if debug:
-        print_dag(result.get("current_dag", {}))
-        print_scratchpad(result.get("reflexion_scratchpad", []))
-    
-    print_warnings(result.get("execution_warnings", []))
-    # Synthesize final_output
-    print_final_output(result)
-
-    return result
+        print_warnings(result.get("execution_warnings", []))
+        print_final_output(result)
+        
+        return result
 
 
 # ── Entry point ───────────────────────────────────────────────────────────────

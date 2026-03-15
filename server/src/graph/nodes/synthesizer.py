@@ -29,6 +29,7 @@ def synthesize_output(state: SynapseState) -> dict:
             )
 
     if not successful_results:
+        state.useful_output = False
         return {
             "final_output": (
                 "The agent was unable to complete any tasks successfully. "
