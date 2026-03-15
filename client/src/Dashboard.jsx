@@ -390,7 +390,7 @@ function ChatArea({ messages, loading, animateLastAssistant }) {
     return (
       <div className="chat-welcome">
         <div className="chat-welcome-icon">⬡</div>
-        <h3 className="chat-welcome-title">Start a Conversation</h3>
+        <h3 className="chat-welcome-title">Give me the Query and let's get started!</h3>
         <p className="chat-welcome-sub">Type your task. SynapseAI orchestrates agents and shows a live execution DAG.</p>
       </div>
     );
