@@ -49,10 +49,13 @@ def reflect_on_execution(state: SynapseState) -> dict:
             f"Task ID: {task_id}\n"
             f"Task objective: {task_description}\n\n"
             f"Raw tool output:\n{raw_entry}\n\n"
-            "Respond ONLY with a JSON object with these exact keys:\n"
-            '{"status": "SUCCESS" or "FAILURE", '
-            '"extracted_value": "<the key fact or result from the output>", '
-            '"reason": "<one sentence explaining your verdict>"}'
+            "Respond with a JSON object containing "
+            "{\"status\": \"SUCCESS\" or \"FAILURE\", "
+            "\"extracted_value\": \"the key fact or result from the output\", "
+            "\"reason\": \"a short explanation\"}. "
+            "Prefer \"SUCCESS\" if the output is reasonably relevant or partially correct. "
+            "Return \"FAILURE\" only if the output clearly does not address the task or is unusable. "
+            "Ensure the response is valid JSON."
         ))
     ]
 
